@@ -20,8 +20,4 @@
     <ProjectReference Include="..\TooLiRent.Services\TooLiRent.Services.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Controllers\" />
-  </ItemGroup>
-
 </Project>
