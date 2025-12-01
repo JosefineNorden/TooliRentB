@@ -43,9 +43,9 @@ namespace TooLiRent.Infrastructure.Repositories
         public Task<bool> ExistAsync(int id, CancellationToken ct)
             => _context.Tools.AnyAsync(t => t.Id == id, ct);
         public Task<List<Tool>> GetAllToolsAsync(CancellationToken ct)
-            => _context.Tools.AsNoTracking().ToListAsync(ct);
+            => _context.Tools.AsNoTracking().Include(t => t.Category).ToListAsync(ct);
         public Task<Tool?> GetToolByIdAsync(int id, CancellationToken ct)
-            => _context.Tools.AsNoTracking().FirstOrDefaultAsync(t => t.Id == id, ct);
+            => _context.Tools.AsNoTracking().Include(t => t.Category).FirstOrDefaultAsync(t => t.Id == id, ct);
 
         // --- Status ---
 
@@ -108,7 +108,8 @@ namespace TooLiRent.Infrastructure.Repositories
 
         public async Task<IReadOnlyList<Tool>> FilterToolAsync(string? name, int? categoryId, ToolStatus? status, bool? onlyAvailable, DateTime? from, DateTime? to, CancellationToken ct)
         {
-            var query = _context.Tools.AsNoTracking().AsQueryable();
+            var query = _context.Tools
+                .Include(t => t.Category).AsNoTracking().AsQueryable();
             if (!string.IsNullOrWhiteSpace(name))
             {
                 var n = name.Trim();
@@ -145,6 +146,5 @@ namespace TooLiRent.Infrastructure.Repositories
 
             return await query.ToListAsync(ct);
         }
-
     }
 }

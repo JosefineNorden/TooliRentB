@@ -5,9 +5,9 @@ using System.Text;
 using System.Threading.Tasks;
 using TooliRent.Core.Enums;
 
-namespace TooLiRent.Services.DTOs
+namespace TooLiRent.Services.DTOs.ToolDTOs
 {
-    public class ToolAvailabilityDto
+    public class ToolCreateDto
     {
         public string Name { get; set; } = string.Empty;
         public string? Description { get; set; }

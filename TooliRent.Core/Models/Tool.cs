@@ -13,14 +13,21 @@ namespace TooliRent.Core.Models
         [Required]
         [MaxLength(100)]
         public string Name { get; set; } = string.Empty;
+
         public int Price { get; set; }
+
         [MaxLength(1000)]
         public string Description { get; set; } = string.Empty;
+
         public int Stock { get; set; }
+
         [MaxLength(20)]
         public string? CatalogNumber { get; set; }
+
         public ToolStatus Status { get; set; } = ToolStatus.Available;
+
         public int CategoryId { get; set; }
+
         public Category? Category { get; set; }
     }
 }
