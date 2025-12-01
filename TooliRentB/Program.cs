@@ -4,7 +4,7 @@ using System;
 using TooliRent.Core.Interfaces;
 using TooliRent.Infrastructure.Data;
 using TooLiRent.Infrastructure.Repositories;
-using TooLiRent.Services.DTOs;
+using TooLiRent.Services.DTOs.ToolDTOs;
 using TooLiRent.Services.Interfaces;
 using TooLiRent.Services.Mapping;
 using TooLiRent.Services.Services;
@@ -30,6 +30,9 @@ namespace TooliRentB
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
             builder.Services.AddScoped<IToolRepository, ToolRepository>();
             builder.Services.AddScoped<IToolService, ToolService>();
+
+            builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
+            builder.Services.AddScoped<ICustomerService, CustomerService>();
 
             // --- AutoMapper ---
 

@@ -9,6 +9,9 @@ namespace TooliRent.Core.Interfaces
     public interface IUnitOfWork
     {
         IToolRepository Tools { get; }
-        Task<int> SaveChangesAsync(CancellationToken ct);
+        ICustomerRepository Customers { get; }
+        IRentalRepository Rentals { get; }
+        Task SaveChangesAsync(CancellationToken ct);
+        Task SaveChangesAsync();
     }
 }

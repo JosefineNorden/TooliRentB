@@ -2,18 +2,18 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using TooliRent.Core.Enums;
-using TooLiRent.Services.DTOs;
+using TooLiRent.Services.DTOs.ToolDTOs;
 using TooLiRent.Services.Interfaces;
 
 namespace TooliRentB.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ToolsController : ControllerBase
+    public class ToolController : ControllerBase
     {
         private readonly IToolService _service;
 
-        public ToolsController(IToolService service)
+        public ToolController(IToolService service)
         {
             _service = service;
         }

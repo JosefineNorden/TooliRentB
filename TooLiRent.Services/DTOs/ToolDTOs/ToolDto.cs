@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using TooliRent.Core.Enums;
 using TooliRent.Core.Models;
 
-namespace TooLiRent.Services.DTOs
+namespace TooLiRent.Services.DTOs.ToolDTOs
 {
     public class ToolDto
     {

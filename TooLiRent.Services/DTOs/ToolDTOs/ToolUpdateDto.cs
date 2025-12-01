@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace TooLiRent.Services.DTOs
+namespace TooLiRent.Services.DTOs.ToolDTOs
 {
     public class ToolUpdateDto : ToolCreateDto { }
    

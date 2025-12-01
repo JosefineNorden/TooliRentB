@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using TooliRent.Core.Enums;
 using TooliRent.Core.Interfaces;
-using TooLiRent.Services.DTOs;
+using TooLiRent.Services.DTOs.ToolDTOs;
 using TooLiRent.Services.Interfaces;
 
 namespace TooLiRent.Services.Services

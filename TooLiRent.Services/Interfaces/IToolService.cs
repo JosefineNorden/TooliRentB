@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using TooliRent.Core.Enums;
-using TooLiRent.Services.DTOs;
+using TooLiRent.Services.DTOs.ToolDTOs;
 
 namespace TooLiRent.Services.Interfaces
 {

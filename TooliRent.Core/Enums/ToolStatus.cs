@@ -9,6 +9,7 @@ namespace TooliRent.Core.Enums
     public enum ToolStatus
     {
         Available = 1,
-        Broken = 2
+        Rented = 2,
+        Broken = 3
     }
 }

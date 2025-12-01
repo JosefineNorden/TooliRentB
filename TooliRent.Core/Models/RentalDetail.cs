@@ -12,12 +12,15 @@ namespace TooliRent.Core.Models
     {
         [Required]
         public int RentalId { get; set; }
+
         [ForeignKey("RentalId")]
         public Rental Rental { get; set; } = null!;
         [Required]
         public int ToolId { get; set; }
+
         [ForeignKey("ToolId")]
         public Tool Tool { get; set; } = null!;
+
         [Required]
         public int Quantity { get; set; }
     }

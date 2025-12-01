@@ -9,16 +9,30 @@ using TooliRent.Infrastructure.Data;
 
 namespace TooLiRent.Infrastructure.Repositories
 {
-    public class UnitOfWork(TooLiRentBDbContext context) : IUnitOfWork
+    public class UnitOfWork : IUnitOfWork
     {
-        private readonly TooLiRentBDbContext _context = context;
+        private readonly TooLiRentBDbContext _context;
         private IToolRepository? _tools;
+        private ICustomerRepository? _customers;
+        private IRentalRepository? _rentals;
 
-        public IToolRepository Tools => _tools ??= new ToolRepository(_context);
-        public async Task<int> SaveChangesAsync(CancellationToken ct)
+        public UnitOfWork(TooLiRentBDbContext context)
         {
-            return await _context.SaveChangesAsync(ct);
+            _context = context;
         }
 
+        public IToolRepository Tools => _tools ??= new ToolRepository(_context);
+        public ICustomerRepository Customers => _customers ??= new CustomerRepository(_context);
+        public IRentalRepository Rentals => _rentals ??= new RentalRepository(_context);
+
+        public Task SaveChangesAsync()
+        {
+            return _context.SaveChangesAsync();
+        }
+
+        public Task SaveChangesAsync(CancellationToken ct)
+        {
+            return _context.SaveChangesAsync(ct);
+        }
     }
 }
