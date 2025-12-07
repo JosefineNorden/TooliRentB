@@ -4,9 +4,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using TooliRent.Core.Interfaces;
-using TooliRent.Core.Models;
-using TooliRent.Infrastructure.Data;
+using TooLiRent.Core.Interfaces;
+using TooLiRent.Core.Models;
+using TooLiRent.Infrastructure.Data;
 
 namespace TooLiRent.Infrastructure.Repositories
 {

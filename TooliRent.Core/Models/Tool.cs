@@ -4,9 +4,9 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using TooliRent.Core.Enums;
+using TooLiRent.Core.Enums;
 
-namespace TooliRent.Core.Models
+namespace TooLiRent.Core.Models
 {
     public class Tool : BaseEntity
     {

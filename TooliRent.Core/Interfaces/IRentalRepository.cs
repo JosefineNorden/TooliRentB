@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using TooliRent.Core.Models;
+using TooLiRent.Core.Models;
 
-namespace TooliRent.Core.Interfaces
+namespace TooLiRent.Core.Interfaces
 {
     public interface IRentalRepository
     {

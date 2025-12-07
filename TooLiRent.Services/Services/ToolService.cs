@@ -5,8 +5,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using TooliRent.Core.Enums;
-using TooliRent.Core.Interfaces;
+using TooLiRent.Core.Enums;
+using TooLiRent.Core.Interfaces;
 using TooLiRent.Services.DTOs.ToolDTOs;
 using TooLiRent.Services.Interfaces;
 
@@ -47,7 +47,7 @@ namespace TooLiRent.Services.Services
         {
             await _createValidator.ValidateAndThrowAsync(dto, ct);
 
-            var entity = _mapper.Map<TooliRent.Core.Models.Tool>(dto);
+            var entity = _mapper.Map<TooLiRent.Core.Models.Tool>(dto);
             await _uow.Tools.AddToolAsync(entity, ct);
             await _uow.SaveChangesAsync(ct);
 

@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using TooliRent.Core.Enums;
-using TooliRent.Core.Models;
+using TooLiRent.Core.Enums;
+using TooLiRent.Core.Models;
 
 namespace TooLiRent.Services.DTOs.ToolDTOs
 {

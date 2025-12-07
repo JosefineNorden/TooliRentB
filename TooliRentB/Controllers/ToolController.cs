@@ -1,7 +1,7 @@
 ﻿using FluentValidation;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using TooliRent.Core.Enums;
+using TooLiRent.Core.Enums;
 using TooLiRent.Services.DTOs.ToolDTOs;
 using TooLiRent.Services.Interfaces;
 

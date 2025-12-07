@@ -5,9 +5,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using TooliRent.Core.Enums;
-using TooliRent.Core.Interfaces;
-using TooliRent.Core.Models;
+using TooLiRent.Core.Enums;
+using TooLiRent.Core.Interfaces;
+using TooLiRent.Core.Models;
 using TooLiRent.Services.DTOs.RentalDTOs;
 using TooLiRent.Services.Interfaces;
 
