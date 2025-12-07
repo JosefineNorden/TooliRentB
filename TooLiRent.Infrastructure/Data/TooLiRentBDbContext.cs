@@ -5,10 +5,10 @@ using System.Linq;
 using System.Reflection.Emit;
 using System.Text;
 using System.Threading.Tasks;
-using TooliRent.Core.Enums;
-using TooliRent.Core.Models;
+using TooLiRent.Core.Enums;
+using TooLiRent.Core.Models;
 
-namespace TooliRent.Infrastructure.Data
+namespace TooLiRent.Infrastructure.Data
 {
     public class TooLiRentBDbContext : DbContext
     {

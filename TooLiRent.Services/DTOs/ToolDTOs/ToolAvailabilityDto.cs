@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using TooliRent.Core.Enums;
+using TooLiRent.Core.Enums;
 
 namespace TooLiRent.Services.DTOs.ToolDTOs
 {

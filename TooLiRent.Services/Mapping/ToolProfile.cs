@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using TooliRent.Core.Models;
+using TooLiRent.Core.Models;
 using TooLiRent.Services.DTOs.ToolDTOs;
 
 namespace TooLiRent.Services.Mapping

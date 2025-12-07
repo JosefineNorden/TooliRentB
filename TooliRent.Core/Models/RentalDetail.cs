@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace TooliRent.Core.Models
+namespace TooLiRent.Core.Models
 {
     public class RentalDetail : BaseEntity
     {
