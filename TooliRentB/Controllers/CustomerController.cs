@@ -20,6 +20,7 @@ namespace TooliRentB.Controllers
         /// <summary>
         /// Get all customers
         /// </summary>
+        [Authorize(Roles = "Admin")]
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -33,6 +34,7 @@ namespace TooliRentB.Controllers
         /// <summary>
         /// Get a customer by ID
         /// </summary>
+        [Authorize(Roles = "Admin")]
         [HttpGet("{id}")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -50,6 +52,7 @@ namespace TooliRentB.Controllers
         /// <summary>
         /// Create a new customer
         /// </summary>
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -67,6 +70,7 @@ namespace TooliRentB.Controllers
         /// <summary>
         /// Update an existing customer
         /// </summary>
+        [Authorize(Roles = "Admin")]
         [HttpPut("{id}")]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -81,24 +85,10 @@ namespace TooliRentB.Controllers
             return NoContent();
         }
 
-        [Authorize(Roles = "Admin")]
-        [HttpPatch("{id:int}/activate")]
-        public async Task<IActionResult> Activate(int id)
-        {
-            return await _customerService.SetActiveAsync(id, true) ? NoContent() : NotFound();
-        }
-
-        [Authorize(Roles = "Admin")]
-        [HttpPatch("{id:int}/deactivate")]
-        public async Task<IActionResult> Deactivate(int id)
-        {
-            return await _customerService.SetActiveAsync(id, false) ? NoContent() : NotFound();
-        }
-
-
         /// <summary>
         /// Delete a customer
         /// </summary>
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{id}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(object), StatusCodes.Status404NotFound)]
@@ -116,6 +106,26 @@ namespace TooliRentB.Controllers
 
                 return Conflict(new { error = ex.Message });
             }
+        }
+
+        // --- ME-ENDPOINT FÖR KUND ---
+        [Authorize(Roles = "Member,Admin")]
+        [HttpGet("me")]
+        [ProducesResponseType(typeof(CustomerDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetMyCustomer()
+        {
+            var email = User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
+                        ?? User.FindFirst("email")?.Value;
+
+            if (string.IsNullOrWhiteSpace(email))
+                return Forbid();
+
+            var customer = await _customerService.GetByEmailAsync(email);
+            if (customer is null) return NotFound();
+
+            return Ok(customer); // här får användaren sitt Customer.Id, Name, Email, Phone osv
         }
     }
 }

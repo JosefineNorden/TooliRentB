@@ -15,8 +15,14 @@ namespace TooLiRent.Services.Validation
             RuleFor(x => x.CustomerId)
                 .GreaterThan(0).WithMessage("Kund-ID måste vara större än 0.");
 
-            RuleFor(x => x.ToolIds)
-                .NotEmpty().WithMessage("Minst ett verktyg måste väljas.");
+            RuleFor(x => x.Tools)
+               .NotEmpty().WithMessage("Minst ett verktyg måste väljas.");
+
+            RuleForEach(x => x.Tools).ChildRules(tool =>
+            {
+                tool.RuleFor(t => t.ToolId).GreaterThan(0);
+                tool.RuleFor(t => t.Quantity).GreaterThan(0);
+            });
 
             RuleFor(x => x.StartDate)
                 .NotEmpty().WithMessage("Startdatum krävs.");

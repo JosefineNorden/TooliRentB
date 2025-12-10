@@ -22,7 +22,7 @@ namespace TooLiRent.Infrastructure.Repositories
         }
 
         // --- CRUD Operations ---
-     
+
         public async Task AddToolAsync(Tool tool, CancellationToken ct)
         {
             await _context.Tools.AddAsync(tool, ct);
@@ -106,10 +106,20 @@ namespace TooLiRent.Infrastructure.Repositories
 
         // --- Filtering ---
 
-        public async Task<IReadOnlyList<Tool>> FilterToolAsync(string? name, int? categoryId, ToolStatus? status, bool? onlyAvailable, DateTime? from, DateTime? to, CancellationToken ct)
+        public async Task<IReadOnlyList<Tool>> FilterToolAsync(
+        string? name,
+        int? categoryId,
+        ToolStatus? status,
+        bool? onlyAvailable,
+        DateTime? from,
+        DateTime? to,
+        CancellationToken ct)
         {
             var query = _context.Tools
-                .Include(t => t.Category).AsNoTracking().AsQueryable();
+                .Include(t => t.Category)
+                .AsNoTracking()
+                .AsQueryable();
+
             if (!string.IsNullOrWhiteSpace(name))
             {
                 var n = name.Trim();
@@ -120,31 +130,46 @@ namespace TooLiRent.Infrastructure.Repositories
             {
                 query = query.Where(t => t.CategoryId == categoryId.Value);
             }
+
             if (status.HasValue)
             {
-                query = query.Where(t => t.Status == status.Value);
+                var s = status.Value;
+
+                if (s == ToolStatus.Rented)
+                {
+                    query = query.Where(t =>
+                        _context.RentalDetails.Any(rd =>
+                            rd.ToolId == t.Id &&
+                            !rd.Rental.IsReturned));
+                }
+                else
+                {
+                    query = query.Where(t => t.Status == s);
+                }
             }
-            if (onlyAvailable == true)
+
+            if (onlyAvailable == true && from.HasValue && to.HasValue)
             {
-                var start = from ?? DateTime.UtcNow;
-                var end = to ?? start;
+                var start = from.Value;
+                var end = to.Value;
 
-                var bookedPerTool = _context.RentalDetails
-                    .Where(rd => rd.Rental.IsReturned == false
-                                 && rd.Rental.EndDate > start
-                                 && rd.Rental.StartDate < end)
-                    .GroupBy(rd => rd.ToolId)
-                    .Select(g => new { ToolId = g.Key, Qty = g.Sum(x => x.Quantity) });
-
-                query = from t in query.Where(t => t.Status == ToolStatus.Available)
-                    join b in bookedPerTool on t.Id equals b.ToolId into gj
-                    from b in gj.DefaultIfEmpty()
-                    let booked = (b != null ? b.Qty : 0)
-                    where (t.Stock - booked) > 0
-                    select t;
+                query = query
+                    .Where(t => t.Status == ToolStatus.Available)
+                    .Where(t =>
+                        t.Stock -
+                        (
+                            _context.RentalDetails
+                                .Where(rd =>
+                                    rd.ToolId == t.Id &&
+                                    rd.Rental.IsReturned == false &&
+                                    rd.Rental.EndDate > start &&
+                                    rd.Rental.StartDate < end)
+                                .Sum(rd => (int?)rd.Quantity) ?? 0
+                        ) > 0);
             }
 
             return await query.ToListAsync(ct);
+
         }
     }
 }

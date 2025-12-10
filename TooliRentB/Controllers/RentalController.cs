@@ -30,7 +30,7 @@ namespace TooliRentB.Controllers
         /// Get all rentals (Admin only)
         /// </summary>
         [Authorize(Roles = "Admin")]
-        [HttpGet]
+        [HttpGet("Get All Rentals (admin)")]
         [ProducesResponseType(typeof(IEnumerable<RentalDto>), StatusCodes.Status200OK)]
         public async Task<ActionResult<IEnumerable<RentalDto>>> GetAll()
         {
@@ -39,9 +39,9 @@ namespace TooliRentB.Controllers
         }
 
         /// <summary>
-        /// Get rental by ID (ägarkoll i service)
+        /// Get rental by ID
         /// </summary>
-        [HttpGet("{id}")]
+        [HttpGet("{id}/ Get rental by Id")]
         [ProducesResponseType(typeof(RentalDto), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<ActionResult<RentalDto>> GetById(int id)
@@ -61,46 +61,55 @@ namespace TooliRentB.Controllers
         }
 
         /// <summary>
-        /// Create a new rental (Member skapar åt sig själv, Admin kan skapa åt valfri kund)
+        /// Create a new rental (Admin kan skapar åt kund)
         /// </summary>
-        [Authorize(Roles = "Member,Admin")]
-        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        [HttpPost("Book tools for customer")]
         [ProducesResponseType(typeof(RentalDto), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status409Conflict)]
-        public async Task<ActionResult<RentalDto>> Create([FromBody] RentalCreateDto dto)
+        public async Task<ActionResult<RentalDto>> BookForCustomer([FromBody] RentalCreateDto dto)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            var (email, _) = Caller();
 
-            var (email, isAdmin) = Caller();
+            var created = await _rentalService.CreateAsync(
+                new RentalCreateDto
+                {
+                    CustomerId = dto.CustomerId,
+                    Tools = dto.Tools,
+                    StartDate = dto.StartDate,
+                    EndDate = dto.EndDate
+                },
+                email,
+                isAdmin: true);
 
-            try
-            {
-                var created = await _rentalService.CreateAsync(dto, email, isAdmin);
-                return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
-            }
-            catch (FluentValidation.ValidationException ex)
-{
-    var errors = ex.Errors.Select(e => e.ErrorMessage).ToList();
-    return BadRequest(new { errors });
-}
-            catch (InvalidOperationException ex)
-            {
+            return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+        }
 
-                return Conflict(new { error = ex.Message });
-            }
-            catch (UnauthorizedAccessException)
-            {
-                return Forbid();
-            }
+        [Authorize(Roles = "Member")]
+        [HttpPost("book")]
+        public async Task<ActionResult<RentalDto>> BookAsMember([FromBody] RentalCreateMemberDto dto)
+        {
+            var (email, _) = Caller();
+
+            var created = await _rentalService.CreateAsync(
+                new RentalCreateDto
+                {
+                    Tools = dto.Tools,
+                    StartDate = dto.StartDate,
+                    EndDate = dto.EndDate
+                },
+                email,
+                isAdmin: false);
+
+            return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
 
         /// <summary>
         /// Update an existing rental 
         /// </summary>
-        [HttpPut("{id}")]
+        [HttpPut("{id}/ Update rental")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -125,7 +134,7 @@ namespace TooliRentB.Controllers
         }
 
 
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Member,Admin")]
         [HttpPatch("{id:int}/pickup")]
         public async Task<IActionResult> Pickup(int id)
         {

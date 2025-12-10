@@ -1,4 +1,4 @@
-using FluentValidation;
+﻿using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -48,6 +48,7 @@ namespace TooliRentB
             var jwtKey = jwtSection["Key"];
             var jwtIssuer = jwtSection["Issuer"];
             var jwtAudience = jwtSection["Audience"];
+
 
             builder.Services
                 .AddAuthentication(options =>
@@ -146,12 +147,17 @@ namespace TooliRentB
 
             using (var scope = app.Services.CreateScope())
             {
-                var sp = scope.ServiceProvider;
-                var roleMgr = sp.GetRequiredService<RoleManager<IdentityRole>>();
-                var userMgr = sp.GetRequiredService<UserManager<IdentityUser>>();
+                var services = scope.ServiceProvider;
 
-                SeedIdentityAsync(roleMgr, userMgr).GetAwaiter().GetResult();
+                var roleMgr = services.GetRequiredService<RoleManager<IdentityRole>>();
+                var userMgr = services.GetRequiredService<UserManager<IdentityUser>>();
+                var db = services.GetRequiredService<TooLiRentBDbContext>();
+
+                SeedIdentityAndCustomersAsync(roleMgr, userMgr, db)
+                    .GetAwaiter()
+                    .GetResult();
             }
+            // ==========================================================
 
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
@@ -170,18 +176,49 @@ namespace TooliRentB
             app.Run();
         }
 
-        private static async Task SeedIdentityAsync(
+        private static async Task SeedIdentityAndCustomersAsync(
             RoleManager<IdentityRole> roleMgr,
-            UserManager<IdentityUser> userMgr)
+            UserManager<IdentityUser> userMgr,
+            TooLiRentBDbContext db)
         {
-            // Roller
+            //  Roller
             foreach (var role in new[] { "Admin", "Member" })
             {
                 if (!await roleMgr.RoleExistsAsync(role))
                     await roleMgr.CreateAsync(new IdentityRole(role));
             }
 
-            // Admin
+            //  Identity-konton för alla seedade Customers (som Members)
+            var customers = await db.Customers.ToListAsync();
+
+            foreach (var c in customers)
+            {
+                var existingUser = await userMgr.FindByEmailAsync(c.Email);
+                if (existingUser != null)
+                    continue; 
+
+                var user = new IdentityUser
+                {
+                    UserName = c.Email,
+                    Email = c.Email,
+                    EmailConfirmed = true
+                };
+
+
+                var result = await userMgr.CreateAsync(user, "Customer123!");
+
+                if (result.Succeeded)
+                {
+                    await userMgr.AddToRoleAsync(user, "Member");
+                }
+                else
+                {
+                    var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                    Console.WriteLine($"Kunde inte skapa IdentityUser för {c.Email}: {errors}");
+                }
+            }
+
+            //  Seedad Admin 
             const string adminEmail = "admin@toolirent.local";
             var admin = await userMgr.FindByEmailAsync(adminEmail);
             if (admin is null)
@@ -192,10 +229,18 @@ namespace TooliRentB
                     Email = adminEmail,
                     EmailConfirmed = true
                 };
-                await userMgr.CreateAsync(u, "Admin123!");
-                await userMgr.AddToRoleAsync(u, "Admin");
-            }
 
+                var result = await userMgr.CreateAsync(u, "Admin123!");
+                if (result.Succeeded)
+                {
+                    await userMgr.AddToRoleAsync(u, "Admin");
+                }
+                else
+                {
+                    var errors = string.Join(", ", result.Errors.Select(e => e.Description));
+                    Console.WriteLine($"Kunde inte skapa admin-användare: {errors}");
+                }
+            }
         }
     }
 }
