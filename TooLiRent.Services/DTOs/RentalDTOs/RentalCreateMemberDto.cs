@@ -2,14 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace TooLiRent.Services.DTOs.RentalDTOs
 {
-    public class RentalCreateDto
+    public class RentalCreateMemberDto
     {
-        public int? CustomerId { get; set; }
         public List<RentalToolItemDto> Tools { get; set; } = new();
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }

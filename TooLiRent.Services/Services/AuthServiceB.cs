@@ -155,10 +155,6 @@ namespace TooLiRent.Services.Services
             var audience = _cfg["Jwt:Audience"];
             var now = DateTime.UtcNow;
 
-            Console.WriteLine($"[AuthService] JWT KEY PREFIX : {key[..8]}");
-            Console.WriteLine($"[AuthService] JWT ISSUER    : {issuer}");
-            Console.WriteLine($"[AuthService] JWT AUDIENCE  : {audience}");
-
             var claims = new List<Claim>
             {
                 new Claim(JwtRegisteredClaimNames.Sub, user.Id),

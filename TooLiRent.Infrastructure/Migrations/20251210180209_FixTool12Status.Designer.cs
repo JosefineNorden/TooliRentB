@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TooLiRent.Infrastructure.Data;
 
@@ -11,9 +12,11 @@ using TooLiRent.Infrastructure.Data;
 namespace TooLiRent.Infrastructure.Migrations
 {
     [DbContext(typeof(TooLiRentBDbContext))]
-    partial class TooLiRentBDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251210180209_FixTool12Status")]
+    partial class FixTool12Status
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

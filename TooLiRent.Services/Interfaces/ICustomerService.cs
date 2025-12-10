@@ -14,6 +14,7 @@ namespace TooLiRent.Services.Interfaces
         Task<CustomerDto> CreateAsync(CustomerCreateDto dto);
         Task<bool> UpdateAsync(int id, CustomerUpdateDto dto);
         Task<bool> SetActiveAsync(int id, bool isActive);
+        Task<CustomerDto?> GetByEmailAsync(string email);
         Task<bool> DeleteAsync(int id);
     }
 }

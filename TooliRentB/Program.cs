@@ -49,9 +49,6 @@ namespace TooliRentB
             var jwtIssuer = jwtSection["Issuer"];
             var jwtAudience = jwtSection["Audience"];
 
-            Console.WriteLine("🔑 JWT KEY (Program.cs): " + jwtKey);
-Console.WriteLine("🔑 JWT ISSUER: " + jwtIssuer);
-Console.WriteLine("🔑 JWT AUDIENCE: " + jwtAudience);
 
             builder.Services
                 .AddAuthentication(options =>
