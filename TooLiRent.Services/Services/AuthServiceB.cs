@@ -9,7 +9,9 @@ using System.Linq;
 using System.Security.Claims;
 using System.Text;
 using System.Threading.Tasks;
+using TooLiRent.Core.Enums;
 using TooLiRent.Core.Interfaces;
+using TooLiRent.Core.Models;
 using TooLiRent.Services.DTOs.LoginDTOs;
 using TooLiRent.Services.DTOs.RegisterDTOs;
 using TooLiRent.Services.DTOs.UsersDTOs;
@@ -124,7 +126,25 @@ namespace TooLiRent.Services.Services
             var roleResult = await _users.AddToRoleAsync(user, role);
             if (!roleResult.Succeeded)
                 return (false, roleResult.Errors.Select(e => e.Description));
+            if (string.Equals(role, "Member", StringComparison.OrdinalIgnoreCase))
+            {
+                var existingCustomer = await _uow.Customers.GetByEmailAsync(dto.Email);
+                if (existingCustomer is null)
+                {
+                    var customer = new Customer
+                    {
+                        Name = dto.Email.Split('@')[0],   
+                        Email = dto.Email,
+                        PhoneNumber = string.Empty,        
+                        Status = CustomerStatus.Active,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow
+                    };
 
+                    await _uow.Customers.AddAsync(customer);
+                    await _uow.SaveChangesAsync();
+                }
+            }
             return (true, Enumerable.Empty<string>());
         }
 
@@ -134,6 +154,10 @@ namespace TooLiRent.Services.Services
             var issuer = _cfg["Jwt:Issuer"];
             var audience = _cfg["Jwt:Audience"];
             var now = DateTime.UtcNow;
+
+            Console.WriteLine($"[AuthService] JWT KEY PREFIX : {key[..8]}");
+            Console.WriteLine($"[AuthService] JWT ISSUER    : {issuer}");
+            Console.WriteLine($"[AuthService] JWT AUDIENCE  : {audience}");
 
             var claims = new List<Claim>
             {
@@ -161,6 +185,7 @@ namespace TooLiRent.Services.Services
             );
 
             return new JwtSecurityTokenHandler().WriteToken(token);
+
         }
 
         public async Task<(bool Succeeded, IEnumerable<string> Errors)> DeleteUserAsync(string email)
@@ -203,10 +228,20 @@ namespace TooLiRent.Services.Services
         public async Task<(bool Succeeded, IEnumerable<string> Errors)> DeactivateUserAsync(string email)
         {
             var user = await _users.FindByEmailAsync(email);
-            if (user is null) return (false, new[] { "User not found" });
+            if (user is null)
+                return (false, new[] { "User not found" });
 
+            // Lås Identity-user
             await _users.SetLockoutEnabledAsync(user, true);
             var res = await _users.SetLockoutEndDateAsync(user, DateTimeOffset.MaxValue);
+
+            var customer = await _uow.Customers.GetByEmailAsync(email);
+            if (customer is not null)
+            {
+                customer.Status = CustomerStatus.Inactive; 
+                customer.UpdatedAt = DateTime.UtcNow;
+                await _uow.SaveChangesAsync();
+            }
 
             return res.Succeeded
                 ? (true, Enumerable.Empty<string>())
@@ -216,10 +251,20 @@ namespace TooLiRent.Services.Services
         public async Task<(bool Succeeded, IEnumerable<string> Errors)> ActivateUserAsync(string email)
         {
             var user = await _users.FindByEmailAsync(email);
-            if (user is null) return (false, new[] { "User not found" });
+            if (user is null)
+                return (false, new[] { "User not found" });
 
+            // Lås upp Identity-user
             await _users.SetLockoutEnabledAsync(user, true);
             var res = await _users.SetLockoutEndDateAsync(user, null);
+
+            var customer = await _uow.Customers.GetByEmailAsync(email);
+            if (customer is not null)
+            {
+                customer.Status = CustomerStatus.Active;
+                customer.UpdatedAt = DateTime.UtcNow;
+                await _uow.SaveChangesAsync();
+            }
 
             return res.Succeeded
                 ? (true, Enumerable.Empty<string>())

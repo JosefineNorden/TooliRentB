@@ -20,7 +20,6 @@ namespace TooLiRent.Services.Services
         private readonly IValidator<RentalCreateDto> _createValidator;
         private readonly IValidator<RentalUpdateDto> _updateValidator;
 
-
         public RentalService(
             IUnitOfWork unitOfWork,
             IMapper mapper,
@@ -33,6 +32,9 @@ namespace TooLiRent.Services.Services
             _updateValidator = updateValidator;
         }
 
+        // --------------------------------------------------------------------
+        // READ
+        // --------------------------------------------------------------------
         public async Task<IEnumerable<RentalDto>> GetAllAsync()
         {
             var rentals = await _unitOfWork.Rentals.GetAllAsync();
@@ -50,9 +52,33 @@ namespace TooLiRent.Services.Services
             return _mapper.Map<RentalDto>(rental);
         }
 
+        public async Task<IEnumerable<RentalDto>> GetMyAsync(string email)
+        {
+            var rentals = await _unitOfWork.Rentals.GetByCustomerEmailAsync(email);
+            return _mapper.Map<IEnumerable<RentalDto>>(rentals);
+        }
+
+        public async Task<IEnumerable<RentalDto>> GetOverdueAsync()
+        {
+            var now = DateTime.UtcNow;
+            var rentals = await _unitOfWork.Rentals.GetOverdueAsync(now);
+
+            return rentals.Select(r =>
+            {
+                var dto = _mapper.Map<RentalDto>(r);
+                dto.IsLate = !r.IsReturned &&
+                             (r.EndDate.Kind == DateTimeKind.Utc
+                                ? r.EndDate
+                                : r.EndDate.ToUniversalTime()) < now;
+                return dto;
+            }).ToList();
+        }
+
+        // --------------------------------------------------------------------
+        // CREATE  (nu med RentalDetail.Quantity)
+        // --------------------------------------------------------------------
         public async Task<RentalDto> CreateAsync(RentalCreateDto dto, string? requesterEmail, bool isAdmin)
         {
-            // Validering av DTO
             var validationResult = await _createValidator.ValidateAsync(dto);
             if (!validationResult.IsValid)
                 throw new ValidationException(validationResult.Errors);
@@ -71,38 +97,42 @@ namespace TooLiRent.Services.Services
             if (startUtc < DateTime.UtcNow)
                 throw new InvalidOperationException("StartDate måste ligga i framtiden.");
 
-            // Verktyg som ska hyras
-            var toolIds = dto.ToolIds?.ToList() ?? new List<int>();
-            if (toolIds.Count == 0)
+            // --- Verktyg + quantity från DTO -----------------------------
+            var items = dto.Tools?
+                .Where(t => t != null && t.ToolId > 0 && t.Quantity > 0)
+                .ToList() ?? new List<RentalToolItemDto>();
+
+            if (!items.Any())
                 throw new InvalidOperationException("Minst ett verktyg måste väljas.");
 
-            // Grupp per toolId (ifall samma verktyg valts flera gånger)
-            var groups = toolIds.GroupBy(id => id);
+            // Om du vill tillåta dubbletter i listan → gruppera
+            var groups = items
+                .GroupBy(t => t.ToolId)
+                .Select(g => new { ToolId = g.Key, Quantity = g.Sum(x => x.Quantity) })
+                .ToList();
+
+            // 1) Kolla lager/tillgänglighet
             foreach (var g in groups)
             {
-                var toolId = g.Key;
-                var needed = g.Count();
-
-                var tool = await _unitOfWork.Tools.GetToolByIdAsync(toolId, CancellationToken.None);
+                var tool = await _unitOfWork.Tools.GetToolByIdAsync(g.ToolId, CancellationToken.None);
                 if (tool == null)
-                    throw new InvalidOperationException($"Verktyg med ID {toolId} finns inte.");
+                    throw new InvalidOperationException($"Verktyg med ID {g.ToolId} finns inte.");
 
                 if (tool.Status == ToolStatus.Broken)
                     throw new InvalidOperationException($"Verktyget '{tool.Name}' är trasigt och kan inte bokas.");
 
-                // Hur många exemplar är redan bokade (ej återlämnade) som överlappar perioden?
                 var overlaps = await _unitOfWork.Rentals
-                    .CountOverlappingBookedQuantityAsync(toolId, startUtc, endUtc);
+                    .CountOverlappingBookedQuantityAsync(g.ToolId, startUtc, endUtc);
 
                 var remaining = tool.Stock - overlaps;
-                if (remaining < needed)
+                if (remaining < g.Quantity)
                 {
                     throw new InvalidOperationException(
-                        $"Verktyget '{tool.Name}' är fullbokat för perioden. Ledigt: {Math.Max(0, remaining)}, önskat: {needed}.");
+                        $"Verktyget '{tool.Name}' är fullbokat för perioden. Ledigt: {Math.Max(0, remaining)}, önskat: {g.Quantity}.");
                 }
             }
 
-            // --- Hitta/skap kund ---
+            // 2) Hitta / skapa kund
             int customerId;
             if (isAdmin && dto.CustomerId > 0)
             {
@@ -135,16 +165,15 @@ namespace TooLiRent.Services.Services
                     await _unitOfWork.Customers.AddAsync(customer);
                     await _unitOfWork.SaveChangesAsync();
                 }
-                else
+                else if (customer.Status != CustomerStatus.Active)
                 {
-                    if (customer.Status != CustomerStatus.Active)
-                        throw new InvalidOperationException("Your account is deactivated and cannot make rentals.");
+                    throw new InvalidOperationException("Your account is deactivated and cannot make rentals.");
                 }
 
                 customerId = customer.Id;
             }
 
-            // --- Skapa själva uthyrningen ---
+            // 3) Skapa Rental och RentalDetails (en rad per tool, med Quantity)
             var rental = new Rental
             {
                 CustomerId = customerId,
@@ -152,20 +181,14 @@ namespace TooLiRent.Services.Services
                 EndDate = endUtc,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
-                // IsReturned = false (default)
             };
 
-            // Lägg till detaljer (1 st per toolId här)
-            foreach (var toolId in toolIds)
+            foreach (var g in groups)
             {
-                var tool = await _unitOfWork.Tools.GetToolByIdAsync(toolId, CancellationToken.None);
-                if (tool == null)
-                    throw new InvalidOperationException($"Tool with ID {toolId} not found.");
-
                 rental.RentalDetails.Add(new RentalDetail
                 {
-                    ToolId = tool.Id,
-                    Quantity = 1,
+                    ToolId = g.ToolId,
+                    Quantity = g.Quantity,
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow
                 });
@@ -178,6 +201,9 @@ namespace TooLiRent.Services.Services
             return _mapper.Map<RentalDto>(created);
         }
 
+        // --------------------------------------------------------------------
+        // UPDATE
+        // --------------------------------------------------------------------
         public async Task<RentalDto?> UpdateAsync(RentalUpdateDto dto, string? requesterEmail, bool isAdmin)
         {
             var validationResult = await _updateValidator.ValidateAsync(dto);
@@ -199,16 +225,17 @@ namespace TooLiRent.Services.Services
             return _mapper.Map<RentalDto>(updated);
         }
 
+        // --------------------------------------------------------------------
+        // PICKUP / RETURN – använder Quantity, men ändrar inte Stock
+        // --------------------------------------------------------------------
         public async Task<RentalDto?> PickUpAsync(int id, string? requesterEmail, bool isAdmin)
         {
             var rental = await _unitOfWork.Rentals.GetByIdAsync(id);
             if (rental == null) return null;
 
-            // Endast ägaren eller admin
             if (!isAdmin && !IsOwner(rental, requesterEmail))
                 throw new UnauthorizedAccessException("Not owner of this rental.");
 
-            // Redan avslutad?
             if (rental.IsReturned)
                 throw new InvalidOperationException("Uthyrningen är redan avslutad.");
 
@@ -217,22 +244,12 @@ namespace TooLiRent.Services.Services
                 var tool = d.Tool;
                 if (tool == null) continue;
 
-                var qty = d.Quantity > 0 ? d.Quantity : 1;
-
                 if (tool.Status == ToolStatus.Broken)
                     throw new InvalidOperationException($"Verktyget '{tool.Name}' är trasigt och kan inte hämtas ut.");
 
-                // Ev. säkerhetskoll så vi inte plockar ut mer än fysiskt lager
-                if (tool.Stock < qty)
-                    throw new InvalidOperationException(
-                        $"Inte tillräckligt i lager av '{tool.Name}' för att hämta ut ({tool.Stock} < {qty}).");
-
-                // OBS: Vi ändrar INTE tool.Status här,
-                // och vi ändrar egentligen inte Stock heller om du vill låta
-                // tillgänglighet styras av bokningar+IsReturned i Rental.
-
-                tool.Stock -= qty;
-                if (tool.Stock < 0) tool.Stock = 0;
+                // Sätt status till Rented när något av detta verktyg är uthyrt.
+                if (tool.Status == ToolStatus.Available)
+                    tool.Status = ToolStatus.Rented;
             }
 
             await _unitOfWork.SaveChangesAsync();
@@ -246,7 +263,6 @@ namespace TooLiRent.Services.Services
             var rental = await _unitOfWork.Rentals.GetByIdAsync(id);
             if (rental == null) return null;
 
-            // Endast ägaren eller admin
             if (!isAdmin && !IsOwner(rental, requesterEmail))
                 throw new UnauthorizedAccessException("Not owner of this rental.");
 
@@ -258,12 +274,7 @@ namespace TooLiRent.Services.Services
                 var tool = d.Tool;
                 if (tool == null) continue;
 
-                var qty = d.Quantity > 0 ? d.Quantity : 1;
-
-                // Om du justerar stock vid pickup kan du här öka tillbaka:
-                // tool.Stock += qty;
-
-                // Om verktyget inte är markerat som trasigt, säkerställ att det står som Available
+                // Om verktyget inte är trasigt, markera det som Available igen
                 if (tool.Status != ToolStatus.Broken)
                     tool.Status = ToolStatus.Available;
             }
@@ -276,27 +287,9 @@ namespace TooLiRent.Services.Services
             return _mapper.Map<RentalDto>(refreshed);
         }
 
-        public async Task<IEnumerable<RentalDto>> GetMyAsync(string email)
-        {
-            var rentals = await _unitOfWork.Rentals.GetByCustomerEmailAsync(email);
-            return _mapper.Map<IEnumerable<RentalDto>>(rentals);
-        }
-
-        public async Task<IEnumerable<RentalDto>> GetOverdueAsync()
-        {
-            var now = DateTime.UtcNow;
-            var rentals = await _unitOfWork.Rentals.GetOverdueAsync(now);
-            return rentals.Select(r =>
-            {
-                var dto = _mapper.Map<RentalDto>(r);
-                dto.IsLate = !r.IsReturned &&
-                             (r.EndDate.Kind == DateTimeKind.Utc
-                                 ? r.EndDate
-                                 : r.EndDate.ToUniversalTime()) < now;
-                return dto;
-            }).ToList();
-        }
-
+        // --------------------------------------------------------------------
+        // CANCEL / DELETE
+        // --------------------------------------------------------------------
         public async Task<bool> CancelAsync(int id, string? requesterEmail, bool isAdmin)
         {
             var rental = await _unitOfWork.Rentals.GetByIdAsync(id);
@@ -327,6 +320,9 @@ namespace TooLiRent.Services.Services
             return true;
         }
 
+        // --------------------------------------------------------------------
+        // Helper
+        // --------------------------------------------------------------------
         private static bool IsOwner(Rental rental, string? email)
             => !string.IsNullOrWhiteSpace(email)
                && string.Equals(rental.Customer?.Email, email, StringComparison.OrdinalIgnoreCase);

@@ -9,7 +9,7 @@ namespace TooLiRent.Services.DTOs.RentalDTOs
     public class RentalCreateDto
     {
         public int CustomerId { get; set; }
-        public List<int> ToolIds { get; set; } = new();
+        public List<RentalToolItemDto> Tools { get; set; } = new();
         public DateTime StartDate { get; set; }
         public DateTime EndDate { get; set; }
     }

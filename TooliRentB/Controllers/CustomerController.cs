@@ -81,21 +81,6 @@ namespace TooliRentB.Controllers
             return NoContent();
         }
 
-        [Authorize(Roles = "Admin")]
-        [HttpPatch("{id:int}/activate")]
-        public async Task<IActionResult> Activate(int id)
-        {
-            return await _customerService.SetActiveAsync(id, true) ? NoContent() : NotFound();
-        }
-
-        [Authorize(Roles = "Admin")]
-        [HttpPatch("{id:int}/deactivate")]
-        public async Task<IActionResult> Deactivate(int id)
-        {
-            return await _customerService.SetActiveAsync(id, false) ? NoContent() : NotFound();
-        }
-
-
         /// <summary>
         /// Delete a customer
         /// </summary>

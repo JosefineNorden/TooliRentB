@@ -39,7 +39,7 @@ namespace TooliRentB.Controllers
         }
 
         /// <summary>
-        /// Get rental by ID (ägarkoll i service)
+        /// Get rental by ID
         /// </summary>
         [HttpGet("{id}")]
         [ProducesResponseType(typeof(RentalDto), StatusCodes.Status200OK)]
@@ -184,7 +184,7 @@ namespace TooliRentB.Controllers
         }
 
 
-        [Authorize(Roles = "Member,Admin")]
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{id:int}/cancel")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(object), StatusCodes.Status400BadRequest)]
