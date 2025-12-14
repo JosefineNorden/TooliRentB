@@ -7,6 +7,7 @@ using TooLiRent.Services.Interfaces;
 
 namespace TooliRentB.Controllers
 {
+    [Authorize]
     [Route("api/[controller]")]
     [ApiController]
     public class RentalController : ControllerBase
@@ -172,7 +173,6 @@ namespace TooliRentB.Controllers
             }
         }
 
-        [Authorize]
         [HttpGet("my")]
         [ProducesResponseType(typeof(IEnumerable<RentalDto>), StatusCodes.Status200OK)]
         public async Task<ActionResult<IEnumerable<RentalDto>>> MyRentals()
