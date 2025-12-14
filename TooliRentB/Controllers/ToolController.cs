@@ -1,4 +1,5 @@
 ﻿using FluentValidation;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using TooLiRent.Core.Enums;
@@ -7,6 +8,7 @@ using TooLiRent.Services.Interfaces;
 
 namespace TooliRentB.Controllers
 {
+    [Authorize(Roles = "Admin")]
     [Route("api/[controller]")]
     [ApiController]
     public class ToolController : ControllerBase
@@ -20,6 +22,7 @@ namespace TooliRentB.Controllers
 
         // GET: /api/tools
         // Stöd för filtrering via query
+        [AllowAnonymous]
         [HttpGet]
         public async Task<ActionResult<IReadOnlyList<ToolDto>>> GetAll(
             [FromQuery] string? name,

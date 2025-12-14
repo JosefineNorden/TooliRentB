@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using TooLiRent.Services.DTOs.AdminDTOs;
 using TooLiRent.Services.DTOs.ToolDTOs;
@@ -6,6 +7,7 @@ using TooLiRent.Services.Interfaces;
 
 namespace TooLiRentB.Controllers
 {
+    [Authorize(Roles = "Admin")]
     [Route("api/[controller]")]
     [ApiController]
     public class AdminSummaryController : ControllerBase
