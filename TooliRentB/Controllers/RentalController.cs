@@ -65,7 +65,7 @@ namespace TooliRentB.Controllers
         /// Create a new rental (Admin kan skapar åt kund)
         /// </summary>
         [Authorize(Roles = "Admin")]
-        [HttpPost("Book tools for customer")]
+        [HttpPost("Book tools for customer as admin")]
         [ProducesResponseType(typeof(RentalDto), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status403Forbidden)]
@@ -89,7 +89,7 @@ namespace TooliRentB.Controllers
         }
 
         [Authorize(Roles = "Member")]
-        [HttpPost("book")]
+        [HttpPost("book tools as member")]
         public async Task<ActionResult<RentalDto>> BookAsMember([FromBody] RentalCreateMemberDto dto)
         {
             var (email, _) = Caller();
