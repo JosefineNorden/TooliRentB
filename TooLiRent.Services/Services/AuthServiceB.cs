@@ -126,25 +126,37 @@ namespace TooLiRent.Services.Services
             var roleResult = await _users.AddToRoleAsync(user, role);
             if (!roleResult.Succeeded)
                 return (false, roleResult.Errors.Select(e => e.Description));
+
             if (string.Equals(role, "Member", StringComparison.OrdinalIgnoreCase))
             {
-                var existingCustomer = await _uow.Customers.GetByEmailAsync(dto.Email);
-                if (existingCustomer is null)
+                var customer = await _uow.Customers.GetByEmailAsync(dto.Email);
+
+                if (customer is null)
                 {
-                    var customer = new Customer
+                    customer = new Customer
                     {
-                        Name = dto.Email.Split('@')[0],   
                         Email = dto.Email,
-                        PhoneNumber = string.Empty,        
-                        Status = CustomerStatus.Active,
-                        CreatedAt = DateTime.UtcNow,
-                        UpdatedAt = DateTime.UtcNow
+                        CreatedAt = DateTime.UtcNow
                     };
 
                     await _uow.Customers.AddAsync(customer);
-                    await _uow.SaveChangesAsync();
                 }
+
+                // Use values from registration request
+                customer.Name = string.IsNullOrWhiteSpace(dto.Name)
+                    ? dto.Email.Split('@')[0]
+                    : dto.Name;
+
+                // Only set phone if provided ///
+                if (!string.IsNullOrWhiteSpace(dto.PhoneNumber))
+                    customer.PhoneNumber = dto.PhoneNumber;
+
+                customer.Status = CustomerStatus.Active;
+                customer.UpdatedAt = DateTime.UtcNow;
+
+                await _uow.SaveChangesAsync();
             }
+
             return (true, Enumerable.Empty<string>());
         }
 
