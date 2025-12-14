@@ -147,7 +147,7 @@ namespace TooLiRent.Services.Services
                     ? dto.Email.Split('@')[0]
                     : dto.Name;
 
-                // Only set phone if provided 
+                // Only set phone if provided ///
                 if (!string.IsNullOrWhiteSpace(dto.PhoneNumber))
                     customer.PhoneNumber = dto.PhoneNumber;
 
